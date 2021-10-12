@@ -25,8 +25,8 @@ jobs:
       DYNAFLOW_LAUNCHER_FORCE_CXX11_ABI: "true"
       DYNAFLOW_LAUNCHER_LOCALE: "en_GB"
       COMPILER_FOLDER: "gcc5.3.1"
-      ZIP_ALGORITHMS: "dynawo-algorithms-fedora-Release-GCC-cxx11.zip"
-      ZIP_DYNAWO: "dynawo-fedora-Release-GCC-cxx11.zip"
+      ZIP_ALGORITHMS: "dynawo-algorithms-cxx11-nightly.zip"
+      ZIP_DYNAWO: "dynawo-cxx11-nightly.zip"
 
     steps:
       - name: Checkout
