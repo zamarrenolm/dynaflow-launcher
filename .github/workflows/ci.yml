@@ -14,13 +14,13 @@ on:
 
 jobs:
   fedora:
-    name: Linux Fedora (Release, GCC, cxx11)
+    name: Linux Fedora (Debug, GCC, cxx11)
     runs-on: ubuntu-latest
     container: dynawo/dynawo-ci:latest
     strategy:
       fail-fast: false
     env:
-      DYNAFLOW_LAUNCHER_BUILD_TYPE: Release
+      DYNAFLOW_LAUNCHER_BUILD_TYPE: Debug
       DYNAFLOW_LAUNCHER_PROCESSORS_USED: 2
       DYNAFLOW_LAUNCHER_FORCE_CXX11_ABI: "true"
       DYNAFLOW_LAUNCHER_LOCALE: "en_GB"
