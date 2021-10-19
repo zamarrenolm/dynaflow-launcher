@@ -62,16 +62,6 @@ jobs:
           unzip -qq "dynawo-algorithms.zip"
           cd ..
 
-      - name: Load persistent build files
-        uses: actions/cache@v2
-        with:
-          # A list of files, directories, and wildcard patterns to cache and restore
-          path: |
-            build
-            install
-          # An explicit key for restoring and saving the cache
-          key: ${{ runner.os }}-cmake
-
       - name: Build
         run: |
           export DYNAWO_HOME=$(pwd)/dynawo
