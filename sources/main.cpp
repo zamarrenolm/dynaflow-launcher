@@ -19,6 +19,7 @@
 #include <DYNError.h>
 #include <DYNInitXml.h>
 #include <DYNIoDico.h>
+#include <DYNMPIContext.h>
 #include <boost/filesystem.hpp>
 #include <chrono>
 #include <cstdlib>
@@ -66,6 +67,7 @@ getSimulationKind(const dfl::common::Options::RuntimeConfiguration& runtimeConfi
 int
 main(int argc, char* argv[]) {
   try {
+    auto& mpiContext = DYNAlgorithms::mpi::context();  // MUST be at the beginning to initialize the instance
     auto timeStart = std::chrono::steady_clock::now();
     DYN::Trace::init();
     dfl::common::Options options;
@@ -83,7 +85,9 @@ main(int argc, char* argv[]) {
 
     auto& runtimeConfig = options.config();
     dfl::inputs::Configuration config(boost::filesystem::path(runtimeConfig.configPath));
-    dfl::common::Log::init(options, config.outputDir().generic_string());
+    if (mpiContext.isRootProc()) {
+      dfl::common::Log::init(options, config.outputDir().generic_string());
+    }
     LOG(info) << " ============================================================ " << LOG_ENDL;
     LOG(info) << " " << runtimeConfig.programName << " v" << DYNAFLOW_LAUNCHER_VERSION_STRING << LOG_ENDL;
     LOG(info) << " ============================================================ " << LOG_ENDL;
@@ -124,6 +128,11 @@ main(int argc, char* argv[]) {
     case dfl::Context::SimulationKind::SECURITY_ANALYSIS:
       LOG(info) << MESS(SecurityAnalysisInfo, runtimeConfig.networkFilePath, runtimeConfig.contingenciesFilePath, runtimeConfig.configPath) << LOG_ENDL;
       break;
+    }
+
+    if (simulationKind != dfl::Context::SimulationKind::SECURITY_ANALYSIS && mpiContext.nbProcs() > 1) {
+      LOG(error) << MESS(MPINoMultiProcessing, mpiContext.nbProcs()) << LOG_ENDL;
+      return EXIT_FAILURE;
     }
 
     boost::filesystem::path parFilesDir(root);

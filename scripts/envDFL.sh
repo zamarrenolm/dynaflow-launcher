@@ -12,6 +12,8 @@
 # This file aimes to encapsulate processing for users to compiler and use DFL
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+MPIRUN_PATH=$(which mpirun 2> /dev/null)
+NBPROCS=1
 
 error_exit() {
     echo "${1:-"Unknown Error"}" 1>&2
@@ -132,10 +134,18 @@ where [option] can be:
         launch [network] [config]                 launch DynaFlow Launcher:
                                                   - network: filepath (only IIDM is supported)
                                                   - config: filepath (JSON configuration file)
-        launch-sa [network] [config] [contingencies] launch DynaFlow Launcher to run a Security Analysis:
+        launch-sa [network] [config] [contingencies] --nbThreads [nbprocs]
+                                                  launch DynaFlow Launcher to run a Security Analysis:
                                                   - network: filepath (only IIDM is supported)
                                                   - config: filepath (JSON configuration file)
                                                   - contingencies: filepath (JSON file)
+                                                  - nbprocs: number of MPI processes to use for SA (default 1)
+        launch-sa-gdb [network] [config] [contingencies] --nbThreads [nbprocs]
+                                                  launch DynaFlow Launcher in gdb to run a Security Analysis:
+                                                  - network: filepath (only IIDM is supported)
+                                                  - config: filepath (JSON configuration file)
+                                                  - contingencies: filepath (JSON file)
+                                                  - nbprocs: number of MPI processes to use for SA (default 1)
 
         =========== Others
         help                                      show all available options
@@ -198,6 +208,11 @@ set_environment() {
         export_var_env_force DYNAFLOW_LAUNCHER_LIBRARIES=$DYNAWO_DDB_DIR # same as dynawo
         export_var_env_force DYNAFLOW_LAUNCHER_XSD=$DYNAFLOW_LAUNCHER_INSTALL_DIR/etc/xsd
         export_var_env DYNAFLOW_LAUNCHER_LOG_LEVEL=INFO # INFO by default
+    fi
+
+    if [ -z "$MPIRUN_PATH" ]
+    then
+        MPIRUN_PATH="$DYNAWO_ALGORITHMS_HOME/bin/mpirun"
     fi
 
     # python
@@ -302,20 +317,37 @@ launch() {
 }
 
 launch_sa() {
-    if [ ! -f $1 ]; then
-        error_exit "IIDM network file $1 doesn't exist"
-    fi
     if [ ! -f $2 ]; then
-        error_exit "DFL configuration file $2 doesn't exist"
+        error_exit "IIDM network file $2 doesn't exist"
     fi
     if [ ! -f $3 ]; then
-        error_exit "Security Analysis contingencies file $3 doesn't exist"
+        error_exit "DFL configuration file $3 doesn't exist"
     fi
-    $DYNAFLOW_LAUNCHER_INSTALL_DIR/bin/DynaFlowLauncher \
+    if [ ! -f $4 ]; then
+        error_exit "Security Analysis contingencies file $4 doesn't exist"
+    fi
+    "$MPIRUN_PATH" -np $NBPROCS $DYNAFLOW_LAUNCHER_INSTALL_DIR/bin/DynaFlowLauncher \
     --log-level $DYNAFLOW_LAUNCHER_LOG_LEVEL \
-    --network $1 \
-    --config $2 \
-    --contingencies $3
+    --network $2 \
+    --config $3 \
+    --contingencies $4
+}
+
+launch_sa_gdb() {
+    if [ ! -f $2 ]; then
+        error_exit "IIDM network file $2 doesn't exist"
+    fi
+    if [ ! -f $3 ]; then
+        error_exit "DFL configuration file $3 doesn't exist"
+    fi
+    if [ ! -f $4 ]; then
+        error_exit "Security Analysis contingencies file $4 doesn't exist"
+    fi
+    "$MPIRUN_PATH" -np $NBPROCS xterm -e gdb -q --args $DYNAFLOW_LAUNCHER_INSTALL_DIR/bin/DynaFlowLauncher \
+    --log-level $DYNAFLOW_LAUNCHER_LOG_LEVEL \
+    --network $2 \
+    --config $3 \
+    --contingencies $4
 }
 
 version() {
@@ -344,6 +376,7 @@ apply_clang_format() {
 #################################
 
 MODE=0 # normal
+CMD=$1
 case $1 in
     tests)
         # environment used for unit tests is defined only in cmakelist
@@ -356,9 +389,26 @@ case $1 in
     *)
         ;;
 esac
+
+# Nb Threads
+ARGS=""
+while (($#)); do
+    key="$1"
+    case $key in
+        --nbThreads|-np)
+        NBPROCS=$2
+        shift # past argument
+        shift # past value
+        ;;
+    *)
+        shift # past argument
+        ARGS="$ARGS $key"
+        ;;
+    esac
+done
 set_environment $MODE
 
-case $1 in
+case $CMD in
     build-user)
         build_user || error_exit "Failed to build DFL"
         ;;
@@ -375,10 +425,13 @@ case $1 in
         help
         ;;
     launch)
-        launch $2 $3 || error_exit "Failed to perform launch with network=$2, config=$3"
+        launch $ARGS || error_exit "Failed to perform launch"
         ;;
     launch-sa)
-        launch_sa $2 $3 $4 || error_exit "Failed to perform launch-sa with network=$2, config=$3, contingencies=$4"
+        launch_sa $ARGS || error_exit "Failed to perform launch-sa"
+        ;;
+    launch-sa-gdb)
+        launch_sa_gdb $ARGS || error_exit "Failed to perform launch-sa-gdb"
         ;;
     reset-environment)
         reset_environment_variables || error_exit "Failed to reset environment variables"
@@ -396,7 +449,7 @@ case $1 in
         version
         ;;
     *)
-        echo "$1 is an invalid option"
+        echo "$CMD is an invalid option"
         help
         exit 1
         ;;

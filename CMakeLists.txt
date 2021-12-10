@@ -140,6 +140,8 @@ install(DIRECTORY ${DYNAWO_ALGORITHMS_HOME}/ DESTINATION ${CMAKE_INSTALL_PREFIX}
 
 # MPI (required by algorithms)
 find_package(MPI REQUIRED)
+find_program(MPI_RUN mpirun HINTS ${DYNAWO_ALGORITHMS_HOME}/bin REQUIRED)
+message(STATUS "mpirun found: " ${MPI_RUN})
 
 ## Dynawo
 find_package(Dynawo 1.3.0 REQUIRED)
