@@ -65,20 +65,20 @@ jobs:
       - name: Build
         run: |
           export DYNAWO_HOME=$(pwd)/dynawo
-          export DYNAWO_ALGORITHMS_HOME=$(pwd)/dynawo_algorithms
+          export DYNAWO_ALGORITHMS_HOME=$(pwd)/dynawo-algorithms
           export DYNAFLOW_LAUNCHER_HOME=$(pwd)
           scripts/envDFL.sh build-user
 
       - name: Test
         run: |
           export DYNAWO_HOME=$(pwd)/dynawo
-          export DYNAWO_ALGORITHMS_HOME=$(pwd)/dynawo_algorithms
+          export DYNAWO_ALGORITHMS_HOME=$(pwd)/dynawo-algorithms
           export DYNAFLOW_LAUNCHER_HOME=$(pwd)
           scripts/envDFL.sh tests
 
       - name: Coverage
         run: |
           export DYNAWO_HOME=$(pwd)/dynawo
-          export DYNAWO_ALGORITHMS_HOME=$(pwd)/dynawo_algorithms
+          export DYNAWO_ALGORITHMS_HOME=$(pwd)/dynawo-algorithms
           export DYNAFLOW_LAUNCHER_HOME=$(pwd)
           scripts/envDFL.sh build-tests-coverage
