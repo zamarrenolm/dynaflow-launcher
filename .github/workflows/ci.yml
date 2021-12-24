@@ -11,7 +11,7 @@ on:
 
 jobs:
   fedora:
-    name: Linux Fedora (Release, GCC, cxx11)
+    name: Linux Fedora (Debug, GCC, cxx11)
     runs-on: ubuntu-latest
     container: dynawo/dynawo-ci:latest
     strategy:
